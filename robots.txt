@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://events.asgames.in/sitemap.xml
