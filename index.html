@@ -27,6 +27,7 @@
   <meta name="twitter:description" content="Arcade games, kids activities, fun rides and event rentals in Delhi NCR.">
   <meta name="twitter:image" content="https://asgames.in/frontend/images/asgameslogofull.png">
   <title>AS Games | Arcade Games, Kids Activities &amp; Event Rentals</title>
+  <link rel="icon" type="image/png" href="./favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
     href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap"
@@ -290,7 +291,8 @@
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 8px
+      gap: 8px;
+      display: none;
     }
 
     .hero-dots span {
@@ -1447,17 +1449,21 @@
       setTimeout(() => window.hideLoader(true), 9000);
     })();
 
-    /* API contract: GET /api/getdata -> { success:true, data:{
-       phoneNumbers:[{number:'98107 95386', tel:'+919810795386'}],
-       whatsappNumber:'919810795386', email:'info@asgames.in',
-       address:{lines:['D-1/36, Sharma Colony,','Budh Vihar Phase-2,','New Delhi – 110086']},
-       popularActivities:[{title:'Arcade Games',image:'https://...',alt:'Arcade gaming'}]
-    } }. If the API is unavailable, built-in fallback content remains visible.
+    /* API contract: GET /api/getdata -> { status:true, data:{
+       categories:[{id:15,category_name:'Activities & Games',image:'uploads/category/example.jpg'}]
+    } }. API categories populate both the activity cards and footer links.
+       If the API is unavailable, built-in fallback content remains visible.
     */
     const ASGAMES_DEFAULT_DATA = {
       phoneNumbers: [{ number: '98107 95386', tel: '+919810795386' }, { number: '99589 24192', tel: '+919958924192' }],
       whatsappNumber: '919810795386', email: 'info@asgames.in',
       address: { lines: ['D-1/36, Sharma Colony,', 'Budh Vihar Phase-2,', 'New Delhi – 110086'] },
+      categories: [
+        { category_name: 'Activities & Games', image: 'https://images.unsplash.com/photo-1564429238817-393bd4286b2d?auto=format&fit=crop&w=700&q=80' },
+        { category_name: 'Arcade Games & Fun Rides', image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=700&q=80' },
+        { category_name: 'Kids Fun Activities', image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=700&q=80' },
+        { category_name: 'Events & Rentals', image: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=700&q=80' }
+      ],
       popularActivities: [
         { title: 'Arcade Games', image: 'https://images.unsplash.com/photo-1564429238817-393bd4286b2d?auto=format&fit=crop&w=700&q=80', alt: 'Arcade gaming' },
         { title: 'Fun Activities', image: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=700&q=80', alt: 'Outdoor event games' },
@@ -1467,19 +1473,68 @@
     };
 
     function digitsOnly(value) { return String(value || '').replace(/\D/g, ''); }
-    function safeExternalImage(url) { try { const parsed = new URL(url, window.location.href); return ['https:', 'http:'].includes(parsed.protocol) ? parsed.href : ''; } catch (_) { return ''; } }
+    function safeExternalImage(url) { 
+      try { 
+        return `${baseUrl}/${url}`;
+      }
+      catch (_) { 
+          return ''; 
+      } 
+    }
+    function categoryImageUrl(image, index) {
+      const fallback = ASGAMES_DEFAULT_DATA.popularActivities[index % ASGAMES_DEFAULT_DATA.popularActivities.length].image;
+      if (!image) return fallback;
+      const externalImage = safeExternalImage(image);
+      if (externalImage) return externalImage;
+      return safeExternalImage(`${baseUrl}/${String(image).replace(/^\/+/, '')}`) || fallback;
+    }
     function renderPopularActivities(items) {
       const grid = document.getElementById('popularActivitiesGrid'); if (!grid || !Array.isArray(items)) return;
       grid.replaceChildren();
       items.forEach((item, index) => {
         if (!item || !item.title) return;
+
         const col = document.createElement('div'); col.className = 'col-6 col-lg-3';
         const card = document.createElement('article'); card.className = 'activity-card reveal-item';
-        const img = document.createElement('img'); img.src = safeExternalImage(item.image || item.image_url) || ASGAMES_DEFAULT_DATA.popularActivities[index % 4].image; img.alt = item.alt || item.title; img.title = item.title; img.width = 700; img.height = 230; img.loading = 'lazy'; img.decoding = 'async'; installImageFallback(img);
+        const img = document.createElement('img'); 
+        img.src =
+          item.image || 
+          ASGAMES_DEFAULT_DATA.popularActivities[index % 4].image; 
+        img.alt = item.alt || item.title; img.title = item.title; img.width = 700; img.height = 230; img.loading = 'lazy'; img.decoding = 'async'; installImageFallback(img);
         const heading = document.createElement('h3'); heading.textContent = item.title;
         card.append(img, heading); col.append(card); grid.append(col);
         if (window.ASGamesReveal) window.ASGamesReveal.observe(card); else card.classList.add('is-visible');
       });
+    }
+    function renderFooterActivities(categories) {
+      const footerActivities = document.getElementById('activities-section');
+      if (!footerActivities || !Array.isArray(categories) || !categories.length) return;
+      footerActivities.replaceChildren();
+      categories.slice(0, 4).forEach((category) => {
+        const name = String(category?.category_name || category?.title || '').trim();
+        const id = category?.id;
+        if (!name) return;
+
+        const base64encoded = btoa(String(id));
+        const link = document.createElement('a');
+        link.href = `${baseUrl}/products/${base64encoded}`;
+        link.textContent = name;
+        footerActivities.append(link);
+      });
+    }
+    function renderCategories(categories) {
+      if (!Array.isArray(categories) || !categories.length) return;
+      const activityCards = categories.slice(0, 4).map((category, index) => {
+        const title = String(category?.category_name || '').trim();
+        return title ? {
+          title,
+          // image: categoryImageUrl(category.image, index),
+          image: categoryImageUrl(category.image, index),
+          alt: `${title} from AS Games`
+        } : null;
+      }).filter(Boolean);
+      if (activityCards.length) renderPopularActivities(activityCards);
+      renderFooterActivities(categories);
     }
     function renderContactData(data) {
       const phones = Array.isArray(data.phoneNumbers) ? data.phoneNumbers : ASGAMES_DEFAULT_DATA.phoneNumbers;
@@ -1506,6 +1561,7 @@
       const data = payload && payload.data ? payload.data : payload;
       if (!data || typeof data !== 'object') return;
       renderContactData(data);
+      if (Array.isArray(data.categories)) renderCategories(data.categories);
       if (Array.isArray(data.popularActivities)) renderPopularActivities(data.popularActivities);
     }
 
@@ -1585,7 +1641,7 @@
 
       // API data is optional during static development. Defaults stay visible if it fails.
       renderContactData(ASGAMES_DEFAULT_DATA);
-      renderPopularActivities(ASGAMES_DEFAULT_DATA.popularActivities);
+      renderCategories(ASGAMES_DEFAULT_DATA.categories);
       showLoader();
       $.ajax({ url: `${baseUrl}/api/getdata`, method: 'GET', dataType: 'json', timeout: 7000, cache: false })
         .done(function (response) { applyPageData(response); })
