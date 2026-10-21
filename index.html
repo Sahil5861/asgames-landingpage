@@ -50,6 +50,13 @@
       box-sizing: border-box
     }
 
+    html,
+    body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
     html {
       scroll-behavior: smooth;
       scroll-padding-top: 100px
@@ -61,7 +68,7 @@
       font-family: 'Baloo 2', system-ui, sans-serif;
       font-size: 16px;
       background: #fff;
-      overflow-x: clip
+      overflow-x: hidden
     }
 
     a {
@@ -106,13 +113,21 @@
     }
 
     .navbar {
-      position: sticky;
-      top: 0;
+      /* .sticky-top already owns the complete topbar + navbar. A second
+         sticky element inside it causes the initial header jump on scroll. */
+      position: relative;
+      top: auto;
       padding: 8px 0;
       background: rgba(255, 255, 255, .98);
       z-index: 1030;
       box-shadow: 0 3px 16px rgba(41, 38, 63, .06);
       backdrop-filter: saturate(160%) blur(10px)
+    }
+
+    .sticky-top {
+      z-index: 1030;
+      width: 100%;
+      background: #fff;
     }
 
     .brand img {
@@ -546,6 +561,36 @@
     .form-label {
       font-size: 14px;
       font-weight: 700
+    }
+
+    .enquiry-status {
+      display: none;
+      margin: 0 0 18px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .enquiry-status.is-success {
+      display: block;
+      color: #12663d;
+      background: #e9f8ef;
+      border: 1px solid #bfe8cf;
+    }
+
+    .enquiry-status.is-error {
+      display: block;
+      color: #a12b44;
+      background: #fff0f3;
+      border: 1px solid #fac4d0;
+    }
+
+    .btn-fun[disabled] {
+      cursor: wait;
+      opacity: .72;
+      transform: none;
     }
 
     .footer {
@@ -1243,13 +1288,16 @@
         </div>
         <div class="row g-4">
           <div class="col-lg-7">
-            <form class="contact-form" id="enquiryForm">
+            <form class="contact-form" id="enquiryForm" data-endpoint="https://asgames.in/api/landing-enquiry">
+              <div class="enquiry-status" id="enquiryStatus" role="status" aria-live="polite"></div>
               <div class="row g-3">
                 <div class="col-md-6"><label class="form-label" for="name">Your Name</label><input class="form-control"
                     id="name" name="name" required placeholder="Enter your name"></div>
                 <div class="col-md-6"><label class="form-label" for="phone">Phone Number</label><input
-                    class="form-control" id="phone" name="phone" type="tel" required placeholder="Enter phone number">
+                    class="form-control" id="phone" name="phone" type="tel" required inputmode="numeric" maxlength="10" pattern="[0-9]{10}" placeholder="Enter 10 digit phone number">
                 </div>
+                <div class="col-md-6"><label class="form-label" for="email">Email Address</label><input class="form-control"
+                    id="email" name="email" type="email" required autocomplete="email" placeholder="Enter email address"></div>
                 <div class="col-md-6"><label class="form-label" for="city">Event City</label><select class="form-select"
                     id="city" name="city">
                     <option>Delhi NCR</option>
@@ -1268,10 +1316,9 @@
                 <div class="col-12"><label class="form-label" for="message">Your Message</label><textarea
                     class="form-control" id="message" name="message" rows="4"
                     placeholder="Tell us about your event or requirements"></textarea></div>
-                <div class="col-12"><button type="submit" class="btn-fun">Send Enquiry on WhatsApp <i
-                      class="bi bi-whatsapp ms-1"></i></button>
-                  <p class="small text-secondary mt-2 mb-0">WhatsApp opens with your details. Press Send there to submit
-                    your enquiry.</p>
+                <div class="col-12"><button type="submit" class="btn-fun" id="enquirySubmit">Submit Enquiry <i
+                      class="bi bi-send ms-1"></i></button>
+                  <p class="small text-secondary mt-2 mb-0">Our team will contact you shortly to confirm your enquiry.</p>
                 </div>
               </div>
             </form>
@@ -1533,10 +1580,46 @@
         .always(function () { window.ASGamesInitialRequestFinished(); });
 
       $('#enquiryForm').on('submit', function (e) {
-        e.preventDefault(); const f = new FormData(this);
-        const parts = [`Hello AS Games! I want to enquire about an event.`, `Name: ${f.get('name')}`, `Phone: ${f.get('phone')}`, `City: ${f.get('city')}`, `Event: ${f.get('eventType')}`, `Message: ${f.get('message') || 'Please contact me.'}`];
-        const msg = encodeURIComponent(parts.join('\n'));
-        window.open('https://wa.me/' + (window.ASGamesWhatsAppNumber || ASGAMES_DEFAULT_DATA.whatsappNumber) + '?text=' + msg, '_blank', 'noopener');
+        e.preventDefault();
+
+        const form = this;
+        if (!form.checkValidity()) { form.reportValidity(); return; }
+
+        const $form = $(form);
+        const $button = $('#enquirySubmit');
+        const $status = $('#enquiryStatus');
+        const formData = new FormData(form);
+        const payload = {
+          name: formData.get('name'),
+          email: formData.get('email'),
+          phone: formData.get('phone'),
+          city: formData.get('city'),
+          event_type: formData.get('eventType'),
+          message: formData.get('message')
+        };
+
+        $status.removeClass('is-success is-error').hide().text('');
+        $button.prop('disabled', true).html('Submitting... <i class="bi bi-arrow-repeat ms-1"></i>');
+
+        $.ajax({
+          url: $form.data('endpoint'),
+          method: 'POST',
+          contentType: 'application/json',
+          data: JSON.stringify(payload),
+          dataType: 'json',
+          headers: { Accept: 'application/json' }
+        }).done(function (response) {
+          $status.addClass('is-success').text(response.message || 'Thank you! Your enquiry has been submitted.').show();
+          form.reset();
+        }).fail(function (xhr) {
+          const errors = xhr.responseJSON?.errors;
+          const message = errors
+            ? Object.values(errors).flat().join(' ')
+            : (xhr.responseJSON?.message || 'We could not submit your enquiry. Please try again.');
+          $status.addClass('is-error').text(message).show();
+        }).always(function () {
+          $button.prop('disabled', false).html('Submit Enquiry <i class="bi bi-send ms-1"></i>');
+        });
       });
     });
   </script>
