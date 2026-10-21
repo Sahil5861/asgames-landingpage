@@ -1368,8 +1368,14 @@
             href="#activities">Activities</a><a href="#contact">Contact Us</a>
         </div>
         <div class="col-6 col-lg-3">
-          <h4>Our Activities</h4><a href="#activities">Activities & Games</a><a href="#activities">Arcade Games & Fun
-            Rides</a><a href="#activities">Kids Fun Activities</a><a href="#activities">Events & Rentals</a>
+          <h4>Our Activities</h4>
+
+          <div id="activities-section">
+            <a href="#activities">Activities & Games</a>
+            <a href="#activities">Arcade Games & Fun Rides</a>
+            <a href="#activities">Kids Fun Activities</a>
+            <a href="#activities">Events & Rentals</a>
+          </div>
         </div>
         <div class="col-lg-3">
           <h4>Get In Touch</h4><a data-primary-phone-link href="tel:+919810795386"><i
@@ -1391,6 +1397,9 @@
     // Reusable loader API (available globally): showLoader(), hideLoader(), ASGamesLoader.show()/hide().
     // The initial page loader is hidden only after both the page load and initial API request finish,
     // with a hard timeout so a slow/broken API can never leave the screen blocked.
+
+
+    const baseUrl = 'https://asgames.in';
     (function () {
       let loaderShownAt = Date.now();
       let pageHasLoaded = document.readyState === 'complete';
@@ -1578,7 +1587,7 @@
       renderContactData(ASGAMES_DEFAULT_DATA);
       renderPopularActivities(ASGAMES_DEFAULT_DATA.popularActivities);
       showLoader();
-      $.ajax({ url: '/api/getdata', method: 'GET', dataType: 'json', timeout: 7000, cache: false })
+      $.ajax({ url: `${baseUrl}/api/getdata`, method: 'GET', dataType: 'json', timeout: 7000, cache: false })
         .done(function (response) { applyPageData(response); })
         .fail(function (xhr, status) { console.info('AS Games API unavailable; using default page data.', status); })
         .always(function () { window.ASGamesInitialRequestFinished(); });
