@@ -570,24 +570,37 @@
     }
 
     .enquiry-status {
-      display: none;
-      margin: 0 0 18px;
-      padding: 12px 14px;
-      border-radius: 10px;
+      position: fixed;
+      top: 22px;
+      right: 22px;
+      z-index: 2100;
+      width: min(360px, calc(100vw - 32px));
+      padding: 14px 18px;
+      border-radius: 14px;
+      box-shadow: 0 14px 35px rgba(41, 38, 63, .18);
       font-family: 'Poppins', sans-serif;
       font-size: 13px;
       line-height: 1.5;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translateY(-12px);
+      transition: opacity .25s ease, transform .25s ease, visibility .25s ease;
+    }
+
+    .enquiry-status.is-visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
     }
 
     .enquiry-status.is-success {
-      display: block;
       color: #12663d;
       background: #e9f8ef;
       border: 1px solid #bfe8cf;
     }
 
     .enquiry-status.is-error {
-      display: block;
       color: #a12b44;
       background: #fff0f3;
       border: 1px solid #fac4d0;
@@ -1069,6 +1082,7 @@
     <div class="loader-track"><span></span></div>
     <div class="loader-text">Getting the fun ready…</div>
   </div>
+  <div class="enquiry-status" id="enquiryStatus" role="status" aria-live="polite"></div>
   <div class="site-header">
     <div class="topline"></div>
     <div class="topbar">
@@ -1294,7 +1308,6 @@
         <div class="row g-4">
           <div class="col-lg-7">
             <form class="contact-form" id="enquiryForm" data-endpoint="https://asgames.in/api/landing-enquiry">
-              <div class="enquiry-status" id="enquiryStatus" role="status" aria-live="polite"></div>
               <div class="row g-3">
                 <div class="col-md-6"><label class="form-label" for="name">Your Name</label><input class="form-control"
                     id="name" name="name" required placeholder="Enter your name"></div>
@@ -1648,6 +1661,8 @@
         .fail(function (xhr, status) { console.info('AS Games API unavailable; using default page data.', status); })
         .always(function () { window.ASGamesInitialRequestFinished(); });
 
+      let enquiryStatusTimer;
+
       $('#enquiryForm').on('submit', function (e) {
         e.preventDefault();
 
@@ -1658,6 +1673,15 @@
         const $button = $('#enquirySubmit');
         const $status = $('#enquiryStatus');
         const formData = new FormData(form);
+        function showStatus(type, message) {
+          clearTimeout(enquiryStatusTimer);
+          $status
+            .removeClass('is-success is-error is-visible')
+            .addClass(`is-${type}`)
+            .text(message)
+            .addClass('is-visible');
+          enquiryStatusTimer = setTimeout(() => $status.removeClass('is-visible'), 3000);
+        }
         const payload = {
           name: formData.get('name'),
           email: formData.get('email'),
@@ -1667,7 +1691,7 @@
           message: formData.get('message')
         };
 
-        $status.removeClass('is-success is-error').hide().text('');
+        $status.removeClass('is-success is-error is-visible').text('');
         $button.prop('disabled', true).html('Submitting... <i class="bi bi-arrow-repeat ms-1"></i>');
 
         $.ajax({
@@ -1678,14 +1702,14 @@
           dataType: 'json',
           headers: { Accept: 'application/json' }
         }).done(function (response) {
-          $status.addClass('is-success').text(response.message || 'Thank you! Your enquiry has been submitted.').show();
+          showStatus('success', response.message || 'Thank you! Your enquiry has been submitted.');
           form.reset();
         }).fail(function (xhr) {
           const errors = xhr.responseJSON?.errors;
           const message = errors
             ? Object.values(errors).flat().join(' ')
             : (xhr.responseJSON?.message || 'We could not submit your enquiry. Please try again.');
-          $status.addClass('is-error').text(message).show();
+          showStatus('error', message);
         }).always(function () {
           $button.prop('disabled', false).html('Submit Enquiry <i class="bi bi-send ms-1"></i>');
         });
