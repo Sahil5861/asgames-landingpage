@@ -59,7 +59,7 @@
 
     html {
       scroll-behavior: smooth;
-      scroll-padding-top: 100px
+      scroll-padding-top: 125px
     }
 
     body {
@@ -113,7 +113,7 @@
     }
 
     .navbar {
-      /* .sticky-top already owns the complete topbar + navbar. A second
+      /* .site-header already owns the complete topbar + navbar. A second
          sticky element inside it causes the initial header jump on scroll. */
       position: relative;
       top: auto;
@@ -124,10 +124,13 @@
       backdrop-filter: saturate(160%) blur(10px)
     }
 
-    .sticky-top {
+    .site-header {
+      position: sticky;
+      top: 0;
       z-index: 1030;
       width: 100%;
       background: #fff;
+      isolation: isolate;
     }
 
     .brand img {
@@ -972,7 +975,7 @@
 
     /* Scroll reveal animations: content stays visible unless JS successfully enables them. */
     html {
-      scroll-padding-top: 100px;
+      scroll-padding-top: 125px;
       scroll-behavior: smooth
     }
 
@@ -1063,9 +1066,8 @@
     <div class="loader-track"><span></span></div>
     <div class="loader-text">Getting the fun ready…</div>
   </div>
-  <div class="topline"></div>
-
-  <div class="sticky-top">
+  <div class="site-header">
+    <div class="topline"></div>
     <div class="topbar">
       <div class="container">
         <a data-email-link href="mailto:info@asgames.in"><i class="bi bi-envelope me-2"></i> <span
@@ -1528,7 +1530,8 @@
         const target = document.querySelector(targetId); if (!target) return;
         e.preventDefault(); closeSidebar();
         const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const top = target.getBoundingClientRect().top + window.pageYOffset - ($('header.navbar').outerHeight() || 0) - 12;
+        const headerHeight = document.querySelector('.site-header')?.offsetHeight || 0;
+        const top = target.getBoundingClientRect().top + window.pageYOffset - headerHeight - 12;
         window.scrollTo({ top: Math.max(0, top), behavior: reduceMotion ? 'auto' : 'smooth' });
         if (history.replaceState) history.replaceState(null, '', targetId);
       });
