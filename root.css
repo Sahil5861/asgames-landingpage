@@ -1,0 +1,45 @@
+:root {
+    --pink: #f04470;
+    --purple: #7961e9;
+    --orange: #ffa52f;
+    --mint: #51c5ad;
+    --ink: #29263f;
+    --muted: #77768a;
+    --pale: #faf8ff;
+    --line: #eceaf2;
+    --white: #fff
+}
+
+* {
+    box-sizing: border-box
+}
+
+html,
+body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 125px
+}
+
+body {
+    margin: 0;
+    color: var(--ink);
+    font-family: 'Baloo 2', system-ui, sans-serif;
+    font-size: 16px;
+    background: #fff;
+    overflow-x: hidden
+}
+
+a {
+    text-decoration: none;
+    color: inherit
+}
+
+.container {
+    max-width: 1190px
+}
