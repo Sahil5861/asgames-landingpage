@@ -113,6 +113,10 @@
       color: var(--pink)
     }
 
+    .topbar .whatsapp-icon:hover{
+      color: var(--mint);
+    }
+
     .navbar {
       /* .site-header already owns the complete topbar + navbar. A second
          sticky element inside it causes the initial header jump on scroll. */
@@ -195,10 +199,10 @@
     }
 
     .btn-fun:hover {
-      background: var(--purple);
+      background: var(--mint);
       color: #fff;
       transform: translateY(-2px);
-      box-shadow: 0 7px 0 #5b45c6
+      box-shadow: 0 7px 0 #349d87
     }
 
     .btn-outline-fun {
@@ -1089,7 +1093,7 @@
       <div class="container">
         <a data-email-link href="mailto:info@asgames.in"><i class="bi bi-envelope me-2"></i> <span
             data-email-text>Email Us</span></a>
-          <a data-whatsapp-link href="https://wa.me/919810795386" target="_blank"
+          <a data-whatsapp-link href="https://wa.me/919810795386" target="_blank" class="whatsapp-icon"
           rel="noopener"><i class="bi bi-whatsapp me-2"></i> WhatsApp</a>
           <!-- <a href="https://asgames.in/"><i
             class="bi bi-box-arrow-up-right me-2"></i> Main Website</a> -->
@@ -1414,7 +1418,13 @@
     // with a hard timeout so a slow/broken API can never leave the screen blocked.
 
 
-    const baseUrl = 'https://asgames.in';
+    // const baseUrl = 'https://asgames.in';
+    const baseUrl = 'http://127.0.0.1:8081';
+
+    console.log(baseUrl);
+    
+
+
     (function () {
       let loaderShownAt = Date.now();
       let pageHasLoaded = document.readyState === 'complete';
@@ -1695,7 +1705,8 @@
         $button.prop('disabled', true).html('Submitting... <i class="bi bi-arrow-repeat ms-1"></i>');
 
         $.ajax({
-          url: $form.data('endpoint'),
+          // url: $form.data('endpoint'),
+          url : `${baseUrl}/api/landing-enquiry`,
           method: 'POST',
           contentType: 'application/json',
           data: JSON.stringify(payload),
